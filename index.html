@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caso 02 | Distribuidora Norte</title>
+  <style>
+    :root{--bg:#f5f7fb;--ink:#18253c;--muted:#65748b;--line:#e4e9f1;--blue:#3159d8;--soft:#edf2ff;--green:#127354;--red:#bd3f45;--orange:#965900}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+    header{background:#172b56;color:#fff;padding:24px max(22px,calc((100vw - 1050px)/2));}header p{margin:6px 0 0;color:#c9d5eb}
+    h1{font-size:25px;line-height:1.2;margin:0}h2{font-size:18px;margin:0 0 14px}h3{font-size:15px;margin:0 0 8px}
+    main{max-width:1050px;margin:25px auto;padding:0 18px 35px}.note{background:var(--soft);border-left:4px solid var(--blue);padding:13px 16px;border-radius:8px;margin-bottom:20px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}.stat,.panel{background:white;border:1px solid var(--line);border-radius:12px;box-shadow:0 5px 20px #1b315307}.stat{padding:16px}.stat small{color:var(--muted);display:block}.stat strong{font-size:27px;display:block;line-height:1.3;margin-top:4px}
+    .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{padding:20px;margin-bottom:18px}.full{grid-column:1/-1}
+    label{font-size:13px;font-weight:650;display:block;margin-bottom:5px}input,select,textarea{width:100%;padding:10px 11px;border:1px solid #cdd6e3;border-radius:8px;font:inherit;background:white;color:var(--ink)}textarea{resize:vertical;min-height:76px}input:focus,select:focus,textarea:focus{outline:2px solid #aac1ff;border-color:var(--blue)}.field{margin-bottom:12px}
+    button{background:var(--blue);color:white;border:0;border-radius:8px;padding:10px 14px;font:inherit;font-weight:650;cursor:pointer}button:hover{filter:brightness(.94)}button.secondary{background:#ebeff6;color:#223a63}button.small{font-size:12px;padding:6px 9px}.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    table{width:100%;border-collapse:collapse;font-size:14px}th{text-align:left;background:#f7f9fc;color:#526177;font-size:12px}th,td{padding:10px;border-bottom:1px solid var(--line)}tr:last-child td{border-bottom:0}.table-scroll{overflow-x:auto}.pill{display:inline-block;border-radius:30px;padding:2px 9px;font-size:12px;font-weight:650;background:#e5f7ef;color:var(--green)}.pill.low{background:#fff1dd;color:var(--orange)}.pill.high{background:#ffe9e9;color:var(--red)}.muted{color:var(--muted)}.empty{color:var(--muted);padding:12px 0}.risk{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.risk:last-child{border:0}.risk p{font-size:13px;color:var(--muted);margin:2px 0 0}.ideas{margin:0;padding-left:19px}.ideas li{margin:7px 0}.foot{font-size:12px;color:var(--muted);text-align:center;margin-top:10px}#msg{min-height:22px;font-size:13px;margin-top:8px;font-weight:650}#msg.error{color:var(--red)}#msg.ok{color:var(--green)}
+    @media(max-width:690px){.cols,.stats{grid-template-columns:1fr}header{padding:22px 19px}.stat strong{font-size:24px}main{margin-top:18px}.panel{padding:16px}}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Distribuidora Norte S.A.C.</h1>
+    <p>Sistema web básico · Caso 02 — Sistemas de Información Empresarial</p>
+  </header>
+  <main>
+    <div class="note"><strong>Problema:</strong> los pedidos duplicados, el inventario desactualizado y la comunicación deficiente ocasionan retrasos. Esta demostración ayuda a registrar ventas, controlar el stock y comunicar incidentes al equipo de TI.</div>
+    <section class="stats" aria-label="Indicadores">
+      <div class="stat"><small>Pedidos registrados</small><strong id="totalPedidos">0</strong></div>
+      <div class="stat"><small>Unidades disponibles</small><strong id="totalStock">0</strong></div>
+      <div class="stat"><small>Incidentes pendientes</small><strong id="totalIncidentes">0</strong></div>
+    </section>
+    <div class="cols">
+      <section class="panel">
+        <h2>1. Registrar pedido</h2>
+        <form id="pedidoForm">
+          <div class="field"><label for="producto">Producto</label><select id="producto" required></select></div>
+          <div class="field"><label for="cantidad">Cantidad</label><input id="cantidad" type="number" min="1" max="1000" value="1" required></div>
+          <button type="submit">Registrar venta</button>
+          <div id="msg" role="status" aria-live="polite"></div>
+        </form>
+        <p class="muted" style="font-size:13px;margin:10px 0 0">El stock se descuenta automáticamente. También se bloquea un envío idéntico repetido de inmediato.</p>
+      </section>
+      <section class="panel">
+        <h2>2. Inventario disponible</h2>
+        <div class="table-scroll"><table><thead><tr><th>Producto</th><th>Stock</th><th>Estado</th></tr></thead><tbody id="stockTabla"></tbody></table></div>
+      </section>
+      <section class="panel full">
+        <h2>3. Historial de pedidos</h2>
+        <div class="table-scroll"><table><thead><tr><th>Código</th><th>Producto</th><th>Cantidad</th><th>Fecha</th></tr></thead><tbody id="pedidosTabla"></tbody></table></div>
+        <div id="sinPedidos" class="empty">Todavía no hay pedidos registrados.</div>
+      </section>
+      <section class="panel">
+        <h2>4. Reportar problema de TI</h2>
+        <form id="incidenteForm">
+          <div class="field"><label for="tipo">Tipo de problema</label><select id="tipo"><option>Error de inventario</option><option>Pedido duplicado</option><option>Falla del sistema</option><option>Otro problema</option></select></div>
+          <div class="field"><label for="detalle">Descripción</label><textarea id="detalle" placeholder="Ej.: El stock no coincide con almacén" maxlength="240" required></textarea></div>
+          <button type="submit">Enviar reporte</button>
+        </form>
+      </section>
+      <section class="panel">
+        <h2>5. Seguimiento de incidentes</h2>
+        <div id="incidentesLista" aria-live="polite"></div>
+      </section>
+      <section class="panel">
+        <h2>6. Riesgos tecnológicos</h2>
+        <div class="risk"><div><strong>Datos incorrectos</strong><p>Validar movimientos y revisar el inventario.</p></div><span class="pill high">Alto</span></div>
+        <div class="risk"><div><strong>Pérdida de información</strong><p>Realizar copias de seguridad.</p></div><span class="pill high">Alto</span></div>
+        <div class="risk"><div><strong>Errores de usuarios</strong><p>Capacitar al personal.</p></div><span class="pill low">Medio</span></div>
+      </section>
+      <section class="panel">
+        <h2>7. Liderazgo y solución</h2>
+        <ul class="ideas">
+          <li><strong>Escucha activa:</strong> recibir reportes del personal.</li>
+          <li><strong>Comunicación:</strong> informar el estado de cada problema.</li>
+          <li><strong>Trabajo en equipo:</strong> coordinar ventas, almacén y TI.</li>
+          <li><strong>Toma de decisiones:</strong> priorizar las fallas más importantes.</li>
+        </ul>
+      </section>
+    </div>
+    <div class="actions"><button type="button" class="secondary" id="reiniciar">Reiniciar datos de demostración</button><span class="muted" style="font-size:12px">Los registros se guardan solo en este navegador.</span></div>
+    <p class="foot">Actividad práctica — Caso 02 · Demostración académica sin servidor ni base de datos externa</p>
+  </main>
+  <script>
+    'use strict';
+    const KEY = 'norte_caso02_demo_v1';
+    const INITIAL = {productos:[{id:1,nombre:'Laptop',stock:12},{id:2,nombre:'Mouse',stock:30},{id:3,nombre:'Teclado',stock:18},{id:4,nombre:'Monitor',stock:8}],pedidos:[],incidentes:[]};
+    let state;
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY));
+      state = saved && Array.isArray(saved.productos) && Array.isArray(saved.pedidos) && Array.isArray(saved.incidentes) ? saved : structuredClone(INITIAL);
+    } catch { state = structuredClone(INITIAL); }
+    const $ = id => document.getElementById(id);
+    const save = () => { try { localStorage.setItem(KEY,JSON.stringify(state)); } catch { /* Modo privado o almacenamiento deshabilitado */ } };
+    const node = (tag, text, className) => { const el=document.createElement(tag);el.textContent=String(text);if(className)el.className=className;return el; };
+    const clear = id => $(id).replaceChildren();
+    function draw() {
+      $('totalPedidos').textContent = state.pedidos.length;
+      $('totalStock').textContent = state.productos.reduce((s,p)=>s+p.stock,0);
+      $('totalIncidentes').textContent = state.incidentes.filter(i=>!i.resuelto).length;
+      clear('producto'); clear('stockTabla'); clear('pedidosTabla'); clear('incidentesLista');
+      state.productos.forEach(p=>{
+        const opt=node('option',p.nombre+' ('+p.stock+' disponibles)');opt.value=String(p.id);$('producto').append(opt);
+        const tr=document.createElement('tr');tr.append(node('td',p.nombre),node('td',p.stock),node('td',p.stock<=5?'Stock bajo':'Disponible','pill '+(p.stock<=5?'low':'')));
+        $('stockTabla').append(tr);
+      });
+      $('sinPedidos').hidden=state.pedidos.length>0;
+      [...state.pedidos].reverse().forEach(p=>{
+        const tr=document.createElement('tr');tr.append(node('td',p.codigo),node('td',p.nombre),node('td',p.cantidad),node('td',p.fecha));$('pedidosTabla').append(tr);
+      });
+      if(!state.incidentes.length){$('incidentesLista').append(node('p','No se han reportado problemas.','empty'));}
+      [...state.incidentes].reverse().forEach(i=>{
+        const div=document.createElement('div');div.className='risk';
+        const info=document.createElement('div');info.append(node('strong',i.tipo),node('p',i.detalle));
+        const b=node('button',i.resuelto?'Resuelto':'Marcar resuelto','small '+(i.resuelto?'secondary':''));b.type='button';b.disabled=i.resuelto;
+        b.addEventListener('click',()=>{i.resuelto=true;save();draw();});div.append(info,b);$('incidentesLista').append(div);
+      });
+    }
+    let ultimoEnvio = {huella:'',instante:0};
+    $('pedidoForm').addEventListener('submit',event=>{
+      event.preventDefault();
+      const p=state.productos.find(p=>p.id===Number($('producto').value));
+      const cantidad=Number($('cantidad').value);
+      const aviso=$('msg');aviso.className='';
+      if(!p||!Number.isSafeInteger(cantidad)||cantidad<1||cantidad>1000){aviso.textContent='Ingresa una cantidad válida.';aviso.className='error';return;}
+      if(cantidad>p.stock){aviso.textContent='No hay suficiente stock para este pedido.';aviso.className='error';return;}
+      const huella=p.id+':'+cantidad,ahora=Date.now();
+      if(ultimoEnvio.huella===huella&&ahora-ultimoEnvio.instante<7000){aviso.textContent='Se bloqueó un pedido repetido. Espera unos segundos para repetirlo.';aviso.className='error';return;}
+      p.stock-=cantidad;const codigo='PED-'+String(state.pedidos.length+1).padStart(3,'0');
+      state.pedidos.push({codigo,nombre:p.nombre,cantidad,fecha:new Date().toLocaleString('es-PE')});
+      ultimoEnvio={huella,instante:ahora};save();draw();aviso.textContent='Pedido '+codigo+' registrado correctamente.';aviso.className='ok';
+    });
+    $('incidenteForm').addEventListener('submit',event=>{
+      event.preventDefault();const detalle=$('detalle').value.trim();if(!detalle)return;
+      state.incidentes.push({id:Date.now(),tipo:$('tipo').value,detalle,resuelto:false});
+      save();draw();$('incidenteForm').reset();
+    });
+    $('reiniciar').addEventListener('click',()=>{
+      if(!confirm('¿Reiniciar los pedidos, el stock y los incidentes de la demostración?'))return;
+      state=structuredClone(INITIAL);ultimoEnvio={huella:'',instante:0};$('msg').textContent='';save();draw();
+    });
+    draw();
+  </script>
+</body>
+</html>
